@@ -1,35 +1,47 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Net.Http.Headers;
+using System.Security.Cryptography.Xml;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MicroService_Sample1.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class WeatherForecastController : ControllerBase
+public class SampleMicroServiceController : ControllerBase
 {
-    private static readonly string[] Summaries = new[]
+    public SampleMicroServiceController()
     {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
-
-    private readonly ILogger<WeatherForecastController> _logger;
-
-    public WeatherForecastController(ILogger<WeatherForecastController> logger)
-    {
-        _logger = logger;
     }
 
     [HttpGet(Name = "GetWeatherForecast")]
-    public IEnumerable<WeatherForecast> Get()
+    public IEnumerable<string> Get()
     {
-        // https://localhost:7075/Sample2
-        // https://localhost:7170/Sample3
-        return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        var resultMicroService1 = "";
+        var resultMicroService2 = "";
+
+        HttpClient client = new HttpClient();
+
+        client.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+
+        // List data response.
+        HttpResponseMessage response = client.GetAsync("https://localhost:7075/Sample2").Result;  // Blocking call! Program will wait here until a response is received or a timeout occurs.
+
+        if (response.IsSuccessStatusCode)
         {
-            Date = DateTime.Now.AddDays(index),
-            TemperatureC = Random.Shared.Next(-20, 55),
-            Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-        })
-        .ToArray();
+            // Parse the response body.
+            resultMicroService1 = response.Content.ReadAsStringAsync().Result;  //Make sure to add a reference to System.Net.Http.Formatting.dll
+        }
+
+        response = client.GetAsync("https://localhost:7170/Sample3").Result;  // Blocking call! Program will wait here until a response is received or a timeout occurs.
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Parse the response body.
+            resultMicroService2 = response.Content.ReadAsStringAsync().Result;  //Make sure to add a reference to System.Net.Http.Formatting.dll
+        }
+
+        return new List<string> { resultMicroService1, resultMicroService2 };
     }
 }
 
